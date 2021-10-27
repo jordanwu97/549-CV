@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker run -it --rm -v "${PWD}":/home/jovyan/work jupyter/scipy-notebook \
+bash -c "cd ~/work && jupyter nbconvert --to PDF ${1}"
