@@ -1,0 +1,45 @@
+#!python
+
+import fileinput
+import re
+import math
+
+
+def to_int(s):
+    return int(s.replace(',', ''))
+
+
+regex_2d = r"^\s*(\w*)-(\d+)\s+\[-1, (\d+), (\d+), \d+\]\s*(\S*)$"
+regex_1d = r"^\s*(\w*)-(\d+)\s+\[-1, (\d+)\].*$"
+
+r1 = re.compile(regex_1d)
+r2 = re.compile(regex_2d)
+
+last_2d = (3, 32)
+
+print(" Layer No. \t Layer Type \t Kernel Size \t Input | Output Dimension \t Input | Output Channels")
+for line in fileinput.input():
+    txt = line.strip("\n")
+    m = r2.match(txt)
+    if m:
+        in_chan, in_size = last_2d
+        layer, id, out_chan, out_size, params = m.groups()
+        out_chan, out_size, params = [
+            to_int(v) for v in [out_chan, out_size, params]]
+
+        io_chan = "-"
+        kernel = "-"
+
+        if layer == "Conv2d":
+            io_chan = f"{in_chan}|{out_chan}"
+            kernel = int(math.sqrt((params - out_chan) / (out_chan * in_chan)))
+
+        print(f"{id} \t {layer} \t {kernel} \t {in_size}|{out_size} \t {io_chan}")
+        last_2d = out_chan, out_size
+        last_1d = out_chan * out_size ** 2
+    else:
+        m = r1.match(txt)
+        in_size = last_1d
+        layer, id, out_size = m.groups()
+        print(f"{id} \t {layer} \t - \t {in_size}|{out_size} \t -")
+        last_1d = out_size
